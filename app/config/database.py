@@ -25,10 +25,11 @@ def get_db_connection():
         raise Exception(f"Error conectando a la base de datos: {str(e)}")
 
 def init_database():
-    """Inicializa la base de datos y crea la tabla users si no existe"""
+    """Inicializa la base de datos y crea las tablas si no existen"""
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
+            # Tabla users
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -40,6 +41,20 @@ def init_database():
                     CONSTRAINT chk_contact CHECK (email IS NOT NULL OR telefono IS NOT NULL)
                 )
             """)
+            
+            # Tabla otp_codes
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS otp_codes (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    email VARCHAR(100) NOT NULL,
+                    otp_code VARCHAR(6) NOT NULL,
+                    expires_at TIMESTAMP NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_email_otp (email, otp_code),
+                    INDEX idx_expires (expires_at)
+                )
+            """)
+            
         connection.commit()
     finally:
         connection.close()

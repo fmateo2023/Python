@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status, Request
 from app.schemas.auth import UserRegister, UserLogin, TokenResponse, UserResponse
 from app.services.auth_service import AuthService
+from app.utils.email_service import EmailService
 from app.utils.logger import log_info, log_error, log_warning
 from app.utils.security import rate_limiter
 from typing import Dict
@@ -34,11 +35,20 @@ class AuthController:
                 password=user_data.password
             )
             
+            # Enviar email de bienvenida si hay email
+            if user_data.email:
+                try:
+                    EmailService.send_welcome_email(user_data.email, user_data.nombre)
+                    log_info("Email de bienvenida enviado", user_id=user['id'], email=user_data.email)
+                except Exception as e:
+                    log_error("Error enviando email de bienvenida", error=e, user_id=user['id'])
+                    # No fallar el registro por error de email
+            
             log_info("Usuario registrado exitosamente", user_id=user['id'], ip=client_ip)
             
             return {
                 "success": True,
-                "message": "Usuario creado exitosamente",
+                "message": "Usuario creado exitosamente. ¡Revisa tu email de bienvenida!",
                 "data": user
             }
         except ValueError as e:
@@ -53,6 +63,22 @@ class AuthController:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Error interno del servidor"
             )
+    
+    @staticmethod
+    def get_user_info(current_user: Dict) -> Dict:
+        """Obtiene información del usuario autenticado"""
+        log_info("Consulta de información de usuario", user_id=current_user['id'])
+        
+        return {
+            "success": True,
+            "message": "Información del usuario obtenida exitosamente",
+            "data": {
+                "id": current_user['id'],
+                "nombre": current_user['nombre'],
+                "email": current_user['email'],
+                "telefono": current_user['telefono']
+            }
+        }
     
     @staticmethod
     def login(login_data: UserLogin, request: Request) -> Dict:

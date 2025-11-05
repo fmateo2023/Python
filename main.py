@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.auth import router as auth_router
+from app.routes.protected import router as protected_router
 from app.config.database import init_database
 from app.utils.logger import log_info, log_error
 
@@ -22,6 +23,7 @@ app.add_middleware(
 
 # Incluir rutas
 app.include_router(auth_router)
+app.include_router(protected_router)
 
 @app.on_event("startup")
 async def startup_event():

@@ -81,3 +81,22 @@ class User:
                 return cursor.fetchone()
         finally:
             connection.close()
+    
+    @staticmethod
+    def update_password(user_id: int, hashed_password: str) -> bool:
+        """Actualiza la contraseña de un usuario"""
+        connection = get_db_connection()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE users SET password = %s WHERE id = %s",
+                    (hashed_password, user_id)
+                )
+                connection.commit()
+                log_info("Contraseña actualizada en BD", user_id=user_id)
+                return cursor.rowcount > 0
+        except Exception as e:
+            log_error("Error actualizando contraseña en BD", error=e)
+            return False
+        finally:
+            connection.close()
